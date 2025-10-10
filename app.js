@@ -2,6 +2,7 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import employeesRoutes from "./routes/employeesRoutes.js";
+import usersRoutes from "./routes/usersRoutes.js";
 
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use("/api/employees", employeesRoutes);
+app.use("/api/users", usersRoutes);
 
 
 app.get("/", (req, res) => {
