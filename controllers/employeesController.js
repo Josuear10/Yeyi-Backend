@@ -47,7 +47,7 @@ export const createEmployee = async (req, res) => {
   }
 };
 
-export const editEmployee = async (req, res) => {
+export const updateEmployee = async (req, res) => {
   const { id } = req.params;
   const {
     emp_name,
