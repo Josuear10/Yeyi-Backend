@@ -1,4 +1,4 @@
-import sql from "../config/supabase.js";
+import sql from '../config/supabase.js';
 
 export const getAllEmployees = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
@@ -32,13 +32,22 @@ export const createEmployee = async (req, res) => {
     emp_dpi,
   } = req.body;
   try {
+    // Si emp_is_active es 'active', convertimos a 1, de lo contrario 0
+    // También acepta números directamente para compatibilidad
+    const statusNumber =
+      emp_is_active === 'active' ||
+      emp_is_active === true ||
+      emp_is_active === 1
+        ? 1
+        : 0;
+
     const newEmployee = await sql`
       INSERT INTO employees (
         emp_name, emp_phone, emp_email, emp_position,
         emp_commission, emp_is_active, user_id, emp_dpi
       ) VALUES (
         ${emp_name}, ${emp_phone}, ${emp_email}, ${emp_position},
-        ${emp_commission}, ${emp_is_active}, ${user_id}, ${emp_dpi}
+        ${emp_commission}, ${statusNumber}, ${user_id}, ${emp_dpi}
       ) RETURNING *`;
     res.status(201).json(newEmployee[0]);
   } catch (error) {
@@ -49,6 +58,10 @@ export const createEmployee = async (req, res) => {
 
 export const updateEmployee = async (req, res) => {
   const { id } = req.params;
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid ID' });
+  }
+
   const {
     emp_name,
     emp_phone,
@@ -60,6 +73,15 @@ export const updateEmployee = async (req, res) => {
     emp_dpi,
   } = req.body;
   try {
+    // Si emp_is_active es 'active', convertimos a 1, de lo contrario 0
+    // También acepta números directamente para compatibilidad
+    const statusNumber =
+      emp_is_active === 'active' ||
+      emp_is_active === true ||
+      emp_is_active === 1
+        ? 1
+        : 0;
+
     const updated = await sql`
       UPDATE employees SET
         emp_name = ${emp_name},
@@ -67,11 +89,15 @@ export const updateEmployee = async (req, res) => {
         emp_email = ${emp_email},
         emp_position = ${emp_position},
         emp_commission = ${emp_commission},
-        emp_is_active = ${emp_is_active},
+        emp_is_active = ${statusNumber},
         user_id = ${user_id},
         emp_dpi = ${emp_dpi}
       WHERE emp_id = ${id}
       RETURNING *`;
+
+    if (updated.length === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
     res.json(updated[0]);
   } catch (error) {
     console.error(error);
@@ -82,18 +108,18 @@ export const updateEmployee = async (req, res) => {
 export const deleteEmployee = async (req, res) => {
   const { id } = req.params;
   if (!id || isNaN(id)) {
-    return res.status(400).json({ error: "Invalid ID" });
+    return res.status(400).json({ error: 'Invalid ID' });
   }
   try {
     const result = await sql`
       DELETE FROM employees WHERE emp_id = ${parseInt(id)} RETURNING *;
     `;
     if (result.length === 0) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json({ error: 'Employee not found' });
     }
-    res.json({ mensaje: "Employee deleted", eliminado: result[0] });
+    res.json({ mensaje: 'Employee deleted', eliminado: result[0] });
   } catch (error) {
-    console.error("Error deleting employee:", error);
+    console.error('Error deleting employee:', error);
     res.status(500).json({ error: error.message });
   }
 };
