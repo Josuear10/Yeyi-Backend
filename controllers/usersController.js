@@ -107,3 +107,85 @@ export const getCurrentUser = async (req, res) => {
     res.status(500).json({ error: error.message || 'Unknown error' });
   }
 };
+
+export const updateUser = async (req, res) => {
+  try {
+    const { user_id } = req.user;
+    const { user_first_name, user_last_name } = req.body;
+
+    if (!user_first_name && !user_last_name) {
+      return res.status(400).json({
+        error: 'At least one field (first_name or last_name) is required',
+      });
+    }
+
+    const updatedUser = await sql`
+      UPDATE users SET
+        user_first_name = ${user_first_name || null},
+        user_last_name = ${user_last_name || null}
+      WHERE user_id = ${user_id}
+      RETURNING user_id, user_username, user_first_name, user_last_name, user_role;
+    `;
+
+    if (updatedUser.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'User updated successfully',
+      user: updatedUser[0],
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: error.message || 'Unknown error' });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { user_id } = req.user;
+    const { current_password, new_password } = req.body;
+
+    if (!current_password || !new_password) {
+      return res
+        .status(400)
+        .json({ error: 'Current password and new password are required' });
+    }
+
+    if (new_password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    // Get current user with password
+    const users = await sql`
+      SELECT * FROM users WHERE user_id = ${user_id};
+    `;
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = users[0];
+
+    // Verify current password
+    const codifiedCurrentPassword = hashPassword(current_password);
+    if (user.user_password !== codifiedCurrentPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash and update new password
+    const codifiedNewPassword = hashPassword(new_password);
+    await sql`
+      UPDATE users SET
+        user_password = ${codifiedNewPassword}
+      WHERE user_id = ${user_id};
+    `;
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ error: error.message || 'Unknown error' });
+  }
+};
