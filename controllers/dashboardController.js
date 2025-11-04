@@ -87,7 +87,7 @@ export const getRecentSales = async (req, res) => {
     const sales = await sql`
       SELECT 
         s.sale_id,
-        s.sale_date,
+        TO_CHAR(s.sale_date, 'YYYY-MM-DD') as sale_date,
         s.sale_total,
         s.pay_id,
         e.emp_name as employee_name,

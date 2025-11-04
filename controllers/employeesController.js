@@ -32,14 +32,9 @@ export const createEmployee = async (req, res) => {
     emp_dpi,
   } = req.body;
   try {
-    // Si emp_is_active es 'active', convertimos a 1, de lo contrario 0
-    // También acepta números directamente para compatibilidad
-    const statusNumber =
-      emp_is_active === 'active' ||
-      emp_is_active === true ||
-      emp_is_active === 1
-        ? 1
-        : 0;
+    // Convertir emp_is_active a booleano
+    const isActive =
+      emp_is_active === true || emp_is_active === 'true' || emp_is_active === 1;
 
     const newEmployee = await sql`
       INSERT INTO employees (
@@ -47,7 +42,7 @@ export const createEmployee = async (req, res) => {
         emp_commission, emp_is_active, user_id, emp_dpi
       ) VALUES (
         ${emp_name}, ${emp_phone}, ${emp_email}, ${emp_position},
-        ${emp_commission}, ${statusNumber}, ${user_id}, ${emp_dpi}
+        ${emp_commission}, ${isActive}, ${user_id}, ${emp_dpi}
       ) RETURNING *`;
     res.status(201).json(newEmployee[0]);
   } catch (error) {
@@ -73,14 +68,9 @@ export const updateEmployee = async (req, res) => {
     emp_dpi,
   } = req.body;
   try {
-    // Si emp_is_active es 'active', convertimos a 1, de lo contrario 0
-    // También acepta números directamente para compatibilidad
-    const statusNumber =
-      emp_is_active === 'active' ||
-      emp_is_active === true ||
-      emp_is_active === 1
-        ? 1
-        : 0;
+    // Convertir emp_is_active a booleano
+    const isActive =
+      emp_is_active === true || emp_is_active === 'true' || emp_is_active === 1;
 
     const updated = await sql`
       UPDATE employees SET
@@ -89,7 +79,7 @@ export const updateEmployee = async (req, res) => {
         emp_email = ${emp_email},
         emp_position = ${emp_position},
         emp_commission = ${emp_commission},
-        emp_is_active = ${statusNumber},
+        emp_is_active = ${isActive},
         user_id = ${user_id},
         emp_dpi = ${emp_dpi}
       WHERE emp_id = ${id}
